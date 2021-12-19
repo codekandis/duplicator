@@ -30,7 +30,17 @@
 		"source": "https://github.com/codekandis/duplicator/tree/master"
 	},
 	"require": {
-		"php": "^7.4"
+		"php": "^7.4",
+		"codekandis/configurations": "^0",
+		"codekandis/console": "^0",
+		"codekandis/constants-classes-translator": "^1",
+		"codekandis/converters": "^0",
+		"codekandis/entities": "^0",
+		"codekandis/json-codec": "^2",
+		"codekandis/logging": "^0",
+		"codekandis/regular-expressions": "^0",
+		"codekandis/sentry-client": "^1",
+		"codekandis/validators": "^0"
 	},
 	"require-dev": {
 		"ext-xdebug": "*",
@@ -40,7 +50,11 @@
 	"autoload": {
 		"psr-4": {
 			"CodeKandis\\Duplicator\\": [
+				"bin/",
 				"src/"
+			],
+			"CodeKandis\\Duplicator\\Configurations\\Plain\\": [
+				"config/"
 			]
 		}
 	},
