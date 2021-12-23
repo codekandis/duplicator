@@ -51,4 +51,20 @@ class FileEntryEntityCollection extends AbstractEntityCollection implements File
 	{
 		return $this->path;
 	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function findByRelativePath( string $relativePath ): ?FileEntryEntityInterface
+	{
+		foreach ( $this as $fileEntry )
+		{
+			if ( $fileEntry->getRelativePath() === $relativePath )
+			{
+				return $fileEntry;
+			}
+		}
+
+		return null;
+	}
 }

@@ -29,4 +29,11 @@ interface FileEntryEntityCollectionInterface extends EntityCollectionInterface
 	 * @return string The path of the directory.
 	 */
 	public function getPath(): string;
+
+	/**
+	 * Finds a file entry by its relative path.
+	 * @param string $relativePath The relative path of the file entry.
+	 * @return ?FileEntryEntityInterface The file entry.
+	 */
+	public function findByRelativePath( string $relativePath ): ?FileEntryEntityInterface;
 }
