@@ -29,6 +29,12 @@ class FileEntryEntity extends AbstractEntity implements FileEntryEntityInterface
 	public string $relativePath = '';
 
 	/**
+	 * Stores the size of the file.
+	 * @var int
+	 */
+	public int $size;
+
+	/**
 	 * Stores the MD5 checksum of the file.
 	 * @var string
 	 */
@@ -80,6 +86,22 @@ class FileEntryEntity extends AbstractEntity implements FileEntryEntityInterface
 	public function setRelativePath( string $relativePath ): void
 	{
 		$this->relativePath = $relativePath;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getSize(): int
+	{
+		return $this->size;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function setSize( int $size ): void
+	{
+		$this->size = $size;
 	}
 
 	/**

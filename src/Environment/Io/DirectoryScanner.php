@@ -8,6 +8,8 @@ use CodeKandis\Duplicator\Environment\Entities\FileEntryEntityInterface;
 use CodeKandis\RegularExpressions\RegularExpression;
 use DirectoryIterator;
 use ReflectionException;
+use function clearstatcache;
+use function filesize;
 use function md5_file;
 use function realpath;
 use function sprintf;
@@ -73,6 +75,7 @@ class DirectoryScanner implements DirectoryScannerInterface
 				continue;
 			}
 
+			clearstatcache( true, $directoryEntry->getPathname() );
 			$fileEntries[] = FileEntryEntity::fromArray(
 				[
 					'rootPath' => $this->path,
@@ -84,6 +87,7 @@ class DirectoryScanner implements DirectoryScannerInterface
 						)
 					) )
 						->replace( static::REGEX_RELATIVE_PATH_REPLACEMENT, $directoryEntry->getPathname(), true ),
+					'size' => filesize( $directoryEntry->getPathname() ),
 					'md5Checksum' => md5_file( $directoryEntry->getPathname() )
 				]
 			);

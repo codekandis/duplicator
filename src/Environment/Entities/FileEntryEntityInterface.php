@@ -47,6 +47,18 @@ interface FileEntryEntityInterface extends EntityInterface
 	public function setRelativePath( string $relativePath ): void;
 
 	/**
+	 * Gets the size of the file.
+	 * @return int The size of the file.
+	 */
+	public function getSize(): int;
+
+	/**
+	 * Sets the size of the file.
+	 * @param int $size The size of the file.
+	 */
+	public function setSize( int $size ): void;
+
+	/**
 	 * Gets the MD5 checksum of the file.
 	 * @return string The MD5 checksum of the file.
 	 */
