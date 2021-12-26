@@ -15,9 +15,11 @@ use CodeKandis\JsonCodec\JsonEncoder;
 use CodeKandis\JsonCodec\JsonEncoderOptions;
 use JsonException;
 use ReflectionException;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use function fclose;
 use function fopen;
@@ -59,6 +61,12 @@ class ScanCommand extends AbstractCommand
 	 * @var string
 	 */
 	protected const ERROR_OUTPUT_FILE_NOT_CREATABLE = 'The output file `%s` cannot be created';
+
+	/**
+	 * Represents the progress bar format definition of `processed file`.
+	 * @var string
+	 */
+	protected const PROGRESS_BAR_FORMAT_DEFINITION_PROCESSED_FILE = "Scanning %s:\n%%filename%%\n%%current%%/%%max%% [%%bar%%] %%percent%%%%\n%%elapsed%%/%%estimated%% %%memory%%\n";
 
 	/**
 	 * {@inheritDoc}
@@ -201,15 +209,80 @@ class ScanCommand extends AbstractCommand
 	}
 
 	/**
+	 * Updates the progress maximum.
+	 * @param ProgressBar $progressBar The progress bar to update.
+	 * @param int $progressMaximum The progress maximum.
+	 */
+	private function updateProgressMaximum( ProgressBar $progressBar, int $progressMaximum ): void
+	{
+		$progressBar->setMaxSteps( $progressMaximum );
+	}
+
+	/**
+	 * Updates the current progress.
+	 * @param ProgressBar $progressBar The progress bar to update.
+	 * @param string $currentFile The current processed file.
+	 * @param int $currentProgress The current progress.
+	 */
+	private function updateCurrentProgress( ProgressBar $progressBar, string $currentFile, int $currentProgress ): void
+	{
+		$progressBar->setMessage( $currentFile, 'filename' );
+		$progressBar->setProgress( $currentProgress );
+	}
+
+	/**
+	 * Creates a progress bar.
+	 * @param OutputInterface $output The output to use for the progress bar.
+	 * @param string $directoryType The type of the directory to scan.
+	 * @return ProgressBar The created progress bar.
+	 */
+	private function createProgressBar( OutputInterface $output, string $directoryType ): ProgressBar
+	{
+		ProgressBar::setFormatDefinition(
+			'processedFile',
+			sprintf(
+				static::PROGRESS_BAR_FORMAT_DEFINITION_PROCESSED_FILE,
+				$directoryType
+			)
+		);
+
+		$progressBar = $output instanceof ConsoleOutputInterface
+			? new ProgressBar( $output->section() )
+			: new ProgressBar( $output );
+		$progressBar->setFormat( 'processedFile' );
+		$progressBar->setMessage( '', 'filename' );
+
+		return $progressBar;
+	}
+
+	/**
 	 * Scans a directory.
 	 * @param string $path The path of the directory.
+	 * @param ProgressBar $progressBar The progress bar to display the progress.
 	 * @return FileEntryEntityCollectionInterface The scanned file entries.
 	 * @throws ReflectionException An error occured during the creation of a file entry.
 	 */
-	private function scanDirectory( string $path ): FileEntryEntityCollectionInterface
+	private function scanDirectory( string $path, ProgressBar $progressBar ): FileEntryEntityCollectionInterface
 	{
-		return ( new DirectoryScanner( $path ) )
-			->scan();
+		$directoryScanner = new DirectoryScanner( $path );
+		$directoryScanner->addProgressMaximumCountedEventHandler(
+			function ( int $progressMaximum ) use ( $progressBar ): void
+			{
+				$this->updateProgressMaximum( $progressBar, $progressMaximum );
+			}
+		);
+		$directoryScanner->addProgressChangedEventHandler(
+			function ( string $currentFile, int $currentProgress ) use ( $progressBar ): void
+			{
+				$this->updateCurrentProgress( $progressBar, $currentFile, $currentProgress );
+			}
+		);
+
+		$fileEntries = $directoryScanner->scan();
+		$progressBar->setMessage( 'Done.', 'filename' );
+		$progressBar->setProgress( $progressBar->getProgress() );
+
+		return $fileEntries;
 	}
 
 	/**
@@ -243,8 +316,8 @@ class ScanCommand extends AbstractCommand
 	}
 
 	/**
-	 * Gets the JSON result data.
-	 * @param DuplicateFileEntryEntityCollectionInterface $duplicateFileEntries
+	 * Gets the JSON result data of the duplicate file entries.
+	 * @param DuplicateFileEntryEntityCollectionInterface $duplicateFileEntries The duplicate file entries.
 	 * @return string The JSON result data.
 	 * @throws JsonException An error occured during JSON encoding.
 	 */
@@ -266,6 +339,7 @@ class ScanCommand extends AbstractCommand
 	private function outputToFile( string $jsonResultData, string $outputFile ): void
 	{
 		$fileHandle = fopen( $outputFile, 'wb' );
+
 		if ( false === $fileHandle )
 		{
 			throw new FileNotCreatableException(
@@ -302,8 +376,14 @@ class ScanCommand extends AbstractCommand
 		$mergeDirectory  = $input->getArgument( static::COMMAND_ARGUMENT_MERGE_DIRECTORY );
 		$this->validateArguments( $targetDirectory, $mergeDirectory );
 
-		$targetFileEntries = $this->scanDirectory( $targetDirectory );
-		$mergeFileEntries  = $this->scanDirectory( $mergeDirectory );
+		$targetFileEntries = $this->scanDirectory(
+			$targetDirectory,
+			$this->createProgressBar( $output, 'target directory' )
+		);
+		$mergeFileEntries  = $this->scanDirectory(
+			$mergeDirectory,
+			$this->createProgressBar( $output, 'merge directory' )
+		);
 
 		$duplicateFileEntries = $this->determineDuplicateFileEntries( $targetFileEntries, $mergeFileEntries );
 		$jsonResultData       = $this->getJsonResultData( $duplicateFileEntries );

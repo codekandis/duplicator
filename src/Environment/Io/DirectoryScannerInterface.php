@@ -1,6 +1,7 @@
 <?php declare( strict_types = 1 );
 namespace CodeKandis\Duplicator\Environment\Io;
 
+use Closure;
 use CodeKandis\Duplicator\Environment\Entities\FileEntryEntityCollectionInterface;
 
 /**
@@ -10,6 +11,18 @@ use CodeKandis\Duplicator\Environment\Entities\FileEntryEntityCollectionInterfac
  */
 interface DirectoryScannerInterface
 {
+	/**
+	 * Adds an event handler to the progress maximum counted event.
+	 * @param Closure $eventHandler The event handler to add.
+	 */
+	public function addProgressMaximumCountedEventHandler( Closure $eventHandler ): void;
+
+	/**
+	 * Adds an event handler to the progress changed event.
+	 * @param Closure $eventHandler The event handler to add.
+	 */
+	public function addProgressChangedEventHandler( Closure $eventHandler ): void;
+
 	/**
 	 * Scans the directory for all file entries.
 	 * @return FileEntryEntityCollectionInterface The directory listing with all file entries.
