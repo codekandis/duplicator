@@ -19,10 +19,12 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 use function fclose;
 use function fopen;
 use function fputs;
 use function is_dir;
+use function is_file;
 use function is_readable;
 use function is_writable;
 use function pathinfo;
@@ -65,6 +67,12 @@ class ScanCommand extends AbstractCommand
 	 * @var string
 	 */
 	protected const PROGRESS_BAR_FORMAT_DEFINITION_PROCESSED_FILE = "Scanning %s:\n%%filename%%\n%%current%%/%%max%% [%%bar%%] %%percent%%%%\n%%elapsed%%/%%estimated%% %%memory%%\n";
+
+	/**
+	 * Represents the QUESTION if an existing output file should be overwritten.
+	 * @var string
+	 */
+	protected const QUESTION_OVERWRITE_OUTPUT_FILE = 'The output file `%s` already exists. Overwrite? [y/N]: ';
 
 	/**
 	 * {@inheritDoc}
@@ -113,11 +121,14 @@ class ScanCommand extends AbstractCommand
 
 	/**
 	 * Validates the command options.
+	 * @param InputInterface $input The input to use for the validation.
+	 * @param OutputInterface $output The output to use for the validation.
 	 * @param ?string $outputFile The path of the output file.
+	 * @return bool True if the options are valid, otherwise false.
 	 * @throws DirectoryNotFoundException The output file directory does not exist.
 	 * @throws DirectoryNotWritableException The output file directory is not writable.
 	 */
-	public function validateOptions( ?string $outputFile ): void
+	public function validateOptions( InputInterface $input, OutputInterface $output, ?string $outputFile ): bool
 	{
 		if ( null !== $outputFile )
 		{
@@ -142,7 +153,29 @@ class ScanCommand extends AbstractCommand
 					)
 				);
 			}
+			if ( true === is_file( $outputFile ) )
+			{
+				$answere = $this
+					->getHelper( 'question' )
+					->ask(
+						$input,
+						$output,
+						new ConfirmationQuestion(
+							sprintf(
+								static::QUESTION_OVERWRITE_OUTPUT_FILE,
+								$outputFile
+							),
+							false,
+						)
+					);
+				if ( false === $answere )
+				{
+					return false;
+				}
+			}
 		}
+
+		return true;
 	}
 
 	/**
@@ -227,13 +260,13 @@ class ScanCommand extends AbstractCommand
 
 	/**
 	 * Scans a directory.
-	 * @param string $path The path of the directory.
 	 * @param ProgressBar $progressBar The progress bar to display the progress.
+	 * @param string $path The path of the directory.
 	 * @return DirectoryListingEntityInterface The directory listing.
 	 * @throws ReflectionException An error occured during the creation of a file entry.
 	 * @throws ReflectionException An error occured during the creation of a directory listing.
 	 */
-	private function scanDirectory( string $path, ProgressBar $progressBar ): DirectoryListingEntityInterface
+	private function scanDirectory( ProgressBar $progressBar, string $path ): DirectoryListingEntityInterface
 	{
 		$directoryScanner = new DirectoryScanner( $path );
 		$directoryScanner->addProgressMaximumCountedEventHandler(
@@ -309,14 +342,17 @@ class ScanCommand extends AbstractCommand
 	protected function execute( InputInterface $input, OutputInterface $output ): int
 	{
 		$outputFile = $input->getOption( static::COMMAND_OPTION_OUTPUT_FILE );
-		$this->validateOptions( $outputFile );
+		if ( false === $this->validateOptions( $input, $output, $outputFile ) )
+		{
+			return static::FAILURE;
+		}
 
 		$directory = $input->getArgument( static::COMMAND_ARGUMENT_DIRECTORY );
 		$this->validateArguments( $directory );
 
 		$fileEntries = $this->scanDirectory(
-			$directory,
-			$this->createProgressBar( $output, $directory )
+			$this->createProgressBar( $output, $directory ),
+			$directory
 		);
 
 		$jsonResultData = $this->getJsonResultData( $fileEntries );
