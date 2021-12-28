@@ -2,7 +2,7 @@
 namespace CodeKandis\Duplicator\Environment\Io;
 
 use Closure;
-use CodeKandis\Duplicator\Environment\Entities\FileEntryEntityCollectionInterface;
+use CodeKandis\Duplicator\Environment\Entities\DirectoryListingEntityInterface;
 
 /**
  * Represents the interface of any directory scanner.
@@ -25,7 +25,7 @@ interface DirectoryScannerInterface
 
 	/**
 	 * Scans the directory for all file entries.
-	 * @return FileEntryEntityCollectionInterface The directory listing with all file entries.
+	 * @return DirectoryListingEntityInterface The directory listing with all file entries.
 	 */
-	public function scan(): FileEntryEntityCollectionInterface;
+	public function scan(): DirectoryListingEntityInterface;
 }

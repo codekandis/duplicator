@@ -2,9 +2,10 @@
 namespace CodeKandis\Duplicator\Environment\Io;
 
 use Closure;
+use CodeKandis\Duplicator\Environment\Entities\DirectoryListingEntity;
+use CodeKandis\Duplicator\Environment\Entities\DirectoryListingEntityInterface;
 use CodeKandis\Duplicator\Environment\Entities\FileEntryEntity;
 use CodeKandis\Duplicator\Environment\Entities\FileEntryEntityCollection;
-use CodeKandis\Duplicator\Environment\Entities\FileEntryEntityCollectionInterface;
 use CodeKandis\Duplicator\Environment\Entities\FileEntryEntityInterface;
 use CodeKandis\RegularExpressions\RegularExpression;
 use DirectoryIterator;
@@ -76,14 +77,14 @@ class DirectoryScanner implements DirectoryScannerInterface
 
 	/**
 	 * Raises the progress changed event.
-	 * @param string $currentFile The path of the current processed file.
+	 * @param ?FileEntryEntityInterface $currentFileEntry The current processed file.
 	 * @param int $currentProgress The current progress.
 	 */
-	private function raiseProgressChanged( string $currentFile, int $currentProgress ): void
+	private function raiseProgressChanged( ?FileEntryEntityInterface $currentFileEntry, int $currentProgress ): void
 	{
 		foreach ( $this->progressChangedEventHandlers as $eventHandler )
 		{
-			$eventHandler( $currentFile, $currentProgress );
+			$eventHandler( $currentFileEntry, $currentProgress );
 		}
 	}
 
@@ -147,10 +148,13 @@ class DirectoryScanner implements DirectoryScannerInterface
 			}
 
 			clearstatcache( true, $directoryEntry->getPathname() );
-			$fileEntries[] = FileEntryEntity::fromArray(
+			/**
+			 * @var FileEntryEntityInterface $fileEntry
+			 */
+			$fileEntry     = FileEntryEntity::fromArray(
 				[
-					'rootPath' => $this->path,
-					'path' => $directoryEntry->getPathname(),
+					'rootPath'     => $this->path,
+					'path'         => $directoryEntry->getPathname(),
 					'relativePath' => ( new RegularExpression(
 						sprintf(
 							static::REGEX_RELATIVE_PATH_PATTERN,
@@ -158,12 +162,13 @@ class DirectoryScanner implements DirectoryScannerInterface
 						)
 					) )
 						->replace( static::REGEX_RELATIVE_PATH_REPLACEMENT, $directoryEntry->getPathname(), true ),
-					'size' => filesize( $directoryEntry->getPathname() ),
-					'md5Checksum' => md5_file( $directoryEntry->getPathname() )
+					'size'         => filesize( $directoryEntry->getPathname() ),
+					'md5Checksum'  => md5_file( $directoryEntry->getPathname() )
 				]
 			);
+			$fileEntries[] = $fileEntry;
 
-			$this->raiseProgressChanged( $directoryEntry->getPathname(), ++$currentProgress );
+			$this->raiseProgressChanged( $fileEntry, ++$currentProgress );
 		}
 
 		return $fileEntries;
@@ -188,17 +193,22 @@ class DirectoryScanner implements DirectoryScannerInterface
 	/**
 	 * {@inheritDoc}
 	 * @throws ReflectionException An error occured during the creation of a file entry.
+	 * @throws ReflectionException An error occured during the creation of a directory listing.
 	 */
-	public function scan(): FileEntryEntityCollectionInterface
+	public function scan(): DirectoryListingEntityInterface
 	{
 		$this->raiseProgressMaximumCounted(
 			$this->countFileEntries( $this->path )
 		);
-		$this->raiseProgressChanged( '', 0 );
+		$this->raiseProgressChanged( null, 0 );
 
-		return new FileEntryEntityCollection(
-			$this->path,
-			...$this->readFileEntries( $this->path )
+		return DirectoryListingEntity::fromArray(
+			[
+				'path'        => $this->path,
+				'fileEntries' => new FileEntryEntityCollection(
+					...$this->readFileEntries( $this->path )
+				)
+			]
 		);
 	}
 }

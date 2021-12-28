@@ -2,7 +2,7 @@
 namespace CodeKandis\Duplicator\Cli\Commands;
 
 use CodeKandis\Console\Commands\CommandCollection;
-use CodeKandis\Duplicator\Cli\Commands\Directories;
+use CodeKandis\Duplicator\Cli\Commands\Directory;
 use CodeKandis\Duplicator\Configurations\CliConfigurationRegistryInterface;
 use CodeKandis\SentryClient\SentryClientInterface;
 use Psr\Log\LoggerInterface;
@@ -23,7 +23,7 @@ class ApplicationCommandCollection extends CommandCollection
 	public function __construct( LoggerInterface $logger, CliConfigurationRegistryInterface $configurationRegistry, SentryClientInterface $sentryClient )
 	{
 		parent::__construct(
-			new Directories\Write\ScanCommand( $logger, null, $configurationRegistry, $sentryClient )
+			new Directory\Write\ScanCommand( $logger, null, $configurationRegistry, $sentryClient )
 		);
 	}
 }

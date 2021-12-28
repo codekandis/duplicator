@@ -25,12 +25,6 @@ interface FileEntryEntityCollectionInterface extends EntityCollectionInterface
 	public function offsetGet( $index ): EntityInterface;
 
 	/**
-	 * Gets the path of the directory.
-	 * @return string The path of the directory.
-	 */
-	public function getPath(): string;
-
-	/**
 	 * Finds a file entry by its relative path.
 	 * @param string $relativePath The relative path of the file entry.
 	 * @return ?FileEntryEntityInterface The file entry.

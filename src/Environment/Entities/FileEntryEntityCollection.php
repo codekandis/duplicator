@@ -12,20 +12,12 @@ use CodeKandis\Entities\EntityInterface;
 class FileEntryEntityCollection extends AbstractEntityCollection implements FileEntryEntityCollectionInterface
 {
 	/**
-	 * Stores the path of the directory.
-	 * @var string
-	 */
-	private string $path;
-
-	/**
 	 * Constructor method.
 	 * @param FileEntryEntityInterface[] $fileEntries The file entries of the collection.
 	 */
-	public function __construct( string $path, FileEntryEntityInterface ...$fileEntries )
+	public function __construct( FileEntryEntityInterface ...$fileEntries )
 	{
 		parent::__construct( ...$fileEntries );
-
-		$this->path = $path;
 	}
 
 	/**
@@ -42,14 +34,6 @@ class FileEntryEntityCollection extends AbstractEntityCollection implements File
 	public function offsetGet( $index ): EntityInterface
 	{
 		return parent::offsetGet( $index );
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public function getPath(): string
-	{
-		return $this->path;
 	}
 
 	/**

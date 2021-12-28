@@ -1,11 +1,9 @@
 <?php declare( strict_types = 1 );
-namespace CodeKandis\Duplicator\Cli\Commands\Directories\Write;
+namespace CodeKandis\Duplicator\Cli\Commands\Directory\Write;
 
 use CodeKandis\Duplicator\Cli\Commands\AbstractCommand;
-use CodeKandis\Duplicator\Environment\Entities\DuplicateFileEntryEntity;
-use CodeKandis\Duplicator\Environment\Entities\DuplicateFileEntryEntityCollection;
-use CodeKandis\Duplicator\Environment\Entities\DuplicateFileEntryEntityCollectionInterface;
-use CodeKandis\Duplicator\Environment\Entities\FileEntryEntityCollectionInterface;
+use CodeKandis\Duplicator\Environment\Entities\DirectoryListingEntityInterface;
+use CodeKandis\Duplicator\Environment\Entities\FileEntryEntityInterface;
 use CodeKandis\Duplicator\Environment\Io\DirectoryNotFoundException;
 use CodeKandis\Duplicator\Environment\Io\DirectoryNotReadableException;
 use CodeKandis\Duplicator\Environment\Io\DirectoryNotWritableException;
@@ -32,7 +30,7 @@ use function realpath;
 use function sprintf;
 
 /**
- * Represents the command to scan directories for duplicates.
+ * Represents the command to scan a directory.
  * @package codekandis/duplicator
  * @author Christian Ramelow <info@codekandis.net>
  */
@@ -71,12 +69,12 @@ class ScanCommand extends AbstractCommand
 	/**
 	 * {@inheritDoc}
 	 */
-	protected const COMMAND_NAME = 'directories:scan';
+	protected const COMMAND_NAME = 'directory:scan';
 
 	/**
 	 * {@inheritDoc}
 	 */
-	protected const COMMAND_DESCRIPTION = 'Scans two directories for duplicates.';
+	protected const COMMAND_DESCRIPTION = 'Scans a directory for all files.';
 
 	/**
 	 * Represents the command option `output-file`.
@@ -85,16 +83,10 @@ class ScanCommand extends AbstractCommand
 	protected const COMMAND_OPTION_OUTPUT_FILE = 'output-file';
 
 	/**
-	 * Represents the command argument `target-directory`.
+	 * Represents the command argument `directory`.
 	 * @var string
 	 */
-	protected const COMMAND_ARGUMENT_TARGET_DIRECTORY = 'target-directory';
-
-	/**
-	 * Represents the command argument `merge-directory`.
-	 * @var string
-	 */
-	protected const COMMAND_ARGUMENT_MERGE_DIRECTORY = 'merge-directory';
+	protected const COMMAND_ARGUMENT_DIRECTORY = 'directory';
 
 	/**
 	 * {@inheritDoc}
@@ -113,14 +105,9 @@ class ScanCommand extends AbstractCommand
 	 */
 	protected const COMMAND_ARGUMENTS = [
 		[
-			'name'        => self::COMMAND_ARGUMENT_TARGET_DIRECTORY,
+			'name'        => self::COMMAND_ARGUMENT_DIRECTORY,
 			'mode'        => InputArgument::REQUIRED,
-			'description' => 'The origin directory to merge into.'
-		],
-		[
-			'name'        => self::COMMAND_ARGUMENT_MERGE_DIRECTORY,
-			'mode'        => InputArgument::REQUIRED,
-			'description' => 'The directory to get merged into the target directory.'
+			'description' => 'The directory to scan.'
 		]
 	];
 
@@ -160,49 +147,27 @@ class ScanCommand extends AbstractCommand
 
 	/**
 	 * Validates the command arguments.
-	 * @param string $targetDirectory The target directory.
-	 * @param string $mergeDirectory The merge directory.
-	 * @throws DirectoryNotFoundException The target directory does not exist.
-	 * @throws DirectoryNotReadableException The target directory is not readable.
-	 * @throws DirectoryNotFoundException The merge directory does not exist.
-	 * @throws DirectoryNotReadableException The merge directory is not readable.
+	 * @param string $directory The directory to scan.
+	 * @throws DirectoryNotFoundException The directory to scan does not exist.
+	 * @throws DirectoryNotReadableException The directory to scan is not readable.
 	 */
-	public function validateArguments( string $targetDirectory, string $mergeDirectory ): void
+	public function validateArguments( string $directory ): void
 	{
-		if ( false === is_dir( $targetDirectory ) )
+		if ( false === is_dir( $directory ) )
 		{
 			throw new DirectoryNotFoundException(
 				sprintf(
 					static::ERROR_DIRECTORY_NOT_FOUND,
-					$targetDirectory
+					$directory
 				)
 			);
 		}
-		if ( false === is_readable( $targetDirectory ) )
+		if ( false === is_readable( $directory ) )
 		{
 			throw new DirectoryNotReadableException(
 				sprintf(
 					static::ERROR_DIRECTORY_NOT_READABLE,
-					$targetDirectory
-				)
-			);
-		}
-
-		if ( false === is_dir( $mergeDirectory ) )
-		{
-			throw new DirectoryNotFoundException(
-				sprintf(
-					static::ERROR_DIRECTORY_NOT_FOUND,
-					$mergeDirectory
-				)
-			);
-		}
-		if ( false === is_readable( $mergeDirectory ) )
-		{
-			throw new DirectoryNotReadableException(
-				sprintf(
-					static::ERROR_DIRECTORY_NOT_READABLE,
-					$mergeDirectory
+					$directory
 				)
 			);
 		}
@@ -221,28 +186,33 @@ class ScanCommand extends AbstractCommand
 	/**
 	 * Updates the current progress.
 	 * @param ProgressBar $progressBar The progress bar to update.
-	 * @param string $currentFile The current processed file.
+	 * @param ?FileEntryEntityInterface $currentFileEntry The current processed file.
 	 * @param int $currentProgress The current progress.
 	 */
-	private function updateCurrentProgress( ProgressBar $progressBar, string $currentFile, int $currentProgress ): void
+	private function updateCurrentProgress( ProgressBar $progressBar, ?FileEntryEntityInterface $currentFileEntry, int $currentProgress ): void
 	{
-		$progressBar->setMessage( $currentFile, 'filename' );
+		$progressBar->setMessage(
+			null === $currentFileEntry
+				? ''
+				: $currentFileEntry->getRelativePath(),
+			'filename'
+		);
 		$progressBar->setProgress( $currentProgress );
 	}
 
 	/**
 	 * Creates a progress bar.
 	 * @param OutputInterface $output The output to use for the progress bar.
-	 * @param string $directoryType The type of the directory to scan.
+	 * @param string $directory The directory to scan.
 	 * @return ProgressBar The created progress bar.
 	 */
-	private function createProgressBar( OutputInterface $output, string $directoryType ): ProgressBar
+	private function createProgressBar( OutputInterface $output, string $directory ): ProgressBar
 	{
 		ProgressBar::setFormatDefinition(
 			'processedFile',
 			sprintf(
 				static::PROGRESS_BAR_FORMAT_DEFINITION_PROCESSED_FILE,
-				$directoryType
+				$directory
 			)
 		);
 
@@ -259,10 +229,11 @@ class ScanCommand extends AbstractCommand
 	 * Scans a directory.
 	 * @param string $path The path of the directory.
 	 * @param ProgressBar $progressBar The progress bar to display the progress.
-	 * @return FileEntryEntityCollectionInterface The scanned file entries.
+	 * @return DirectoryListingEntityInterface The directory listing.
 	 * @throws ReflectionException An error occured during the creation of a file entry.
+	 * @throws ReflectionException An error occured during the creation of a directory listing.
 	 */
-	private function scanDirectory( string $path, ProgressBar $progressBar ): FileEntryEntityCollectionInterface
+	private function scanDirectory( string $path, ProgressBar $progressBar ): DirectoryListingEntityInterface
 	{
 		$directoryScanner = new DirectoryScanner( $path );
 		$directoryScanner->addProgressMaximumCountedEventHandler(
@@ -272,60 +243,30 @@ class ScanCommand extends AbstractCommand
 			}
 		);
 		$directoryScanner->addProgressChangedEventHandler(
-			function ( string $currentFile, int $currentProgress ) use ( $progressBar ): void
+			function ( ?FileEntryEntityInterface $currentFileEntry, int $currentProgress ) use ( $progressBar ): void
 			{
-				$this->updateCurrentProgress( $progressBar, $currentFile, $currentProgress );
+				$this->updateCurrentProgress( $progressBar, $currentFileEntry, $currentProgress );
 			}
 		);
 
-		$fileEntries = $directoryScanner->scan();
+		$directoryListing = $directoryScanner->scan();
 		$progressBar->setMessage( 'Done.', 'filename' );
 		$progressBar->setProgress( $progressBar->getProgress() );
 
-		return $fileEntries;
+		return $directoryListing;
 	}
 
 	/**
-	 * Determines all duplicate file entries.
-	 * @param FileEntryEntityCollectionInterface $targetFileEntries The target file entries.
-	 * @param FileEntryEntityCollectionInterface $mergeFileEntries The merge file entries.
-	 * @return DuplicateFileEntryEntityCollectionInterface The duplicate file entries.
-	 * @throws ReflectionException An error occured during the creation of a duplicate file entry.
-	 */
-	private function determineDuplicateFileEntries( FileEntryEntityCollectionInterface $targetFileEntries, FileEntryEntityCollectionInterface $mergeFileEntries ): DuplicateFileEntryEntityCollectionInterface
-	{
-		$duplicateFileEntries = [];
-		foreach ( $targetFileEntries as $targetFileEntry )
-		{
-			$mergeFileEntry = $mergeFileEntries->findByRelativePath(
-				$targetFileEntry->getRelativePath()
-			);
-
-			if ( null !== $mergeFileEntry && $mergeFileEntry->getMd5Checksum() === $targetFileEntry->getMd5Checksum() )
-			{
-				$duplicateFileEntries[] = DuplicateFileEntryEntity::fromArray(
-					[
-						'targetFileEntry' => $targetFileEntry,
-						'mergeFileEntry'  => $mergeFileEntry
-					]
-				);
-			}
-		}
-
-		return new DuplicateFileEntryEntityCollection( ...$duplicateFileEntries );
-	}
-
-	/**
-	 * Gets the JSON result data of the duplicate file entries.
-	 * @param DuplicateFileEntryEntityCollectionInterface $duplicateFileEntries The duplicate file entries.
+	 * Gets the JSON result data of the scanned file entries.
+	 * @param DirectoryListingEntityInterface $directdoryListing The directory listing.
 	 * @return string The JSON result data.
 	 * @throws JsonException An error occured during JSON encoding.
 	 */
-	private function getJsonResultData( DuplicateFileEntryEntityCollectionInterface $duplicateFileEntries ): string
+	private function getJsonResultData( DirectoryListingEntityInterface $directdoryListing ): string
 	{
 		return ( new JsonEncoder() )
 			->encode(
-				$duplicateFileEntries,
+				$directdoryListing,
 				new JsonEncoderOptions( JsonEncoderOptions::PRETTY_PRINT )
 			);
 	}
@@ -358,13 +299,11 @@ class ScanCommand extends AbstractCommand
 	 * {@inheritDoc}
 	 * @throws DirectoryNotFoundException The output file directory does not exist.
 	 * @throws DirectoryNotWritableException The output file directory is not writable.
-	 * @throws DirectoryNotFoundException The target directory does not exist.
-	 * @throws DirectoryNotReadableException The target directory is not readable.
-	 * @throws DirectoryNotFoundException The merge directory does not exist.
-	 * @throws DirectoryNotReadableException The merge directory is not readable.
+	 * @throws DirectoryNotFoundException The directory to scan does not exist.
+	 * @throws DirectoryNotReadableException The directory to scan is not readable.
 	 * @throws FileNotCreatableException The output file is not createable.
 	 * @throws ReflectionException An error occured during the creation of a file entry.
-	 * @throws ReflectionException An error occured during the creation of a duplicate file entry.
+	 * @throws ReflectionException An error occured during the creation of a directory listing.
 	 * @throws JsonException An error occured during JSON encoding.
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ): int
@@ -372,21 +311,15 @@ class ScanCommand extends AbstractCommand
 		$outputFile = $input->getOption( static::COMMAND_OPTION_OUTPUT_FILE );
 		$this->validateOptions( $outputFile );
 
-		$targetDirectory = $input->getArgument( static::COMMAND_ARGUMENT_TARGET_DIRECTORY );
-		$mergeDirectory  = $input->getArgument( static::COMMAND_ARGUMENT_MERGE_DIRECTORY );
-		$this->validateArguments( $targetDirectory, $mergeDirectory );
+		$directory = $input->getArgument( static::COMMAND_ARGUMENT_DIRECTORY );
+		$this->validateArguments( $directory );
 
-		$targetFileEntries = $this->scanDirectory(
-			$targetDirectory,
-			$this->createProgressBar( $output, 'target directory' )
-		);
-		$mergeFileEntries  = $this->scanDirectory(
-			$mergeDirectory,
-			$this->createProgressBar( $output, 'merge directory' )
+		$fileEntries = $this->scanDirectory(
+			$directory,
+			$this->createProgressBar( $output, $directory )
 		);
 
-		$duplicateFileEntries = $this->determineDuplicateFileEntries( $targetFileEntries, $mergeFileEntries );
-		$jsonResultData       = $this->getJsonResultData( $duplicateFileEntries );
+		$jsonResultData = $this->getJsonResultData( $fileEntries );
 
 		if ( null !== $outputFile )
 		{
