@@ -23,6 +23,7 @@ class ApplicationCommandCollection extends CommandCollection
 	public function __construct( LoggerInterface $logger, CliConfigurationRegistryInterface $configurationRegistry, SentryClientInterface $sentryClient )
 	{
 		parent::__construct(
+			new Directory\Write\CompareScansCommand( $logger, null, $configurationRegistry, $sentryClient ),
 			new Directory\Write\ScanCommand( $logger, null, $configurationRegistry, $sentryClient )
 		);
 	}
