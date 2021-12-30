@@ -24,6 +24,7 @@ class ApplicationCommandCollection extends CommandCollection
 	{
 		parent::__construct(
 			new Directory\Write\CompareScansCommand( $logger, null, $configurationRegistry, $sentryClient ),
+			new Directory\Write\RemoveDuplicatesCommand( $logger, null, $configurationRegistry, $sentryClient ),
 			new Directory\Write\ScanCommand( $logger, null, $configurationRegistry, $sentryClient )
 		);
 	}
