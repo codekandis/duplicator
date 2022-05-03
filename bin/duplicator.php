@@ -37,7 +37,7 @@ $sentryClient = new SentryClient(
 );
 $sentryClient->register();
 
-$application = new Application( 'codekandis/duplicator', '0.1.0' );
+$application = new Application( 'codekandis/duplicator', '0.1.1' );
 $application->setCatchExceptions( false );
 
 $applicationLoggerCollection = new ApplicationLoggerCollection();
