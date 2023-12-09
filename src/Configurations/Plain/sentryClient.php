@@ -8,6 +8,6 @@ return [
 	'displayErrors' => true,
 	'errorTypes'    => E_ALL,
 	'environment'   => 'development',
-	'release'       => 'dev-development',
+	'release'       => '0.1.2',
 	'serverName'    => 'duplicator.codekandis'
 ];
