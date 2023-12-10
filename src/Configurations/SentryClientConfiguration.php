@@ -24,7 +24,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getErrorTypes(): ?int
 	{
-		return $this->readOrDefault( 'errorTypes', null );
+		return $this->readOrDefault( null, 'errorTypes' );
 	}
 
 	/**
@@ -40,7 +40,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getRelease(): ?string
 	{
-		return $this->readOrDefault( 'release', null );
+		return $this->readOrDefault( null, 'release' );
 	}
 
 	/**
@@ -48,7 +48,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getEnvironment(): ?string
 	{
-		return $this->readOrDefault( 'environment', null );
+		return $this->readOrDefault( null, 'environment' );
 	}
 
 	/**
@@ -56,7 +56,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getSampleRate(): ?float
 	{
-		return $this->readOrDefault( 'sampleRate', null );
+		return $this->readOrDefault( null, 'sampleRate' );
 	}
 
 	/**
@@ -64,7 +64,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getMaxBreadcrumbs(): ?int
 	{
-		return $this->readOrDefault( 'maxBreadcrumbs', null );
+		return $this->readOrDefault( null, 'maxBreadcrumbs' );
 	}
 
 	/**
@@ -72,7 +72,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getAttachStacktrace(): ?bool
 	{
-		return $this->readOrDefault( 'attachStacktrace', null );
+		return $this->readOrDefault( null, 'attachStacktrace' );
 	}
 
 	/**
@@ -80,7 +80,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getSendDefaultPii(): ?bool
 	{
-		return $this->readOrDefault( 'sendDefaultPii', null );
+		return $this->readOrDefault( null, 'sendDefaultPii' );
 	}
 
 	/**
@@ -88,7 +88,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getServerName(): ?string
 	{
-		return $this->readOrDefault( 'serverName', null );
+		return $this->readOrDefault( null, 'serverName' );
 	}
 
 	/**
@@ -96,7 +96,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getInAppExclude(): ?array
 	{
-		return $this->readOrDefault( 'inAppExclude', null );
+		return $this->readOrDefault( null, 'inAppExclude' );
 	}
 
 	/**
@@ -104,7 +104,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getRequestBodies(): ?string
 	{
-		return $this->readOrDefault( 'requestBodies', null );
+		return $this->readOrDefault( null, 'requestBodies' );
 	}
 
 	/**
@@ -112,7 +112,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getIntegrations(): ?string
 	{
-		return $this->readOrDefault( 'integrations', null );
+		return $this->readOrDefault( null, 'integrations' );
 	}
 
 	/**
@@ -120,7 +120,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getDefaultIntegrations(): ?bool
 	{
-		return $this->readOrDefault( 'defaultIntegrations', null );
+		return $this->readOrDefault( null, 'defaultIntegrations' );
 	}
 
 	/**
@@ -128,7 +128,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getBeforeSend(): ?callable
 	{
-		return $this->readOrDefault( 'beforeSend', null );
+		return $this->readOrDefault( null, 'beforeSend' );
 	}
 
 	/**
@@ -136,7 +136,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getBeforeBreadcrumb(): ?callable
 	{
-		return $this->readOrDefault( 'beforeBreadcrumb', null );
+		return $this->readOrDefault( null, 'beforeBreadcrumb' );
 	}
 
 	/**
@@ -144,7 +144,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getHttpProxy(): ?string
 	{
-		return $this->readOrDefault( 'httpProxy', null );
+		return $this->readOrDefault( null, 'httpProxy' );
 	}
 
 	/**
@@ -152,7 +152,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getCaptureSilencedErrors(): ?bool
 	{
-		return $this->readOrDefault( 'captureSilencedErrors', null );
+		return $this->readOrDefault( null, 'captureSilencedErrors' );
 	}
 
 	/**
@@ -160,7 +160,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getContextLines(): ?int
 	{
-		return $this->readOrDefault( 'contextLines', null );
+		return $this->readOrDefault( null, 'contextLines' );
 	}
 
 	/**
@@ -168,7 +168,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getEnableCompression(): ?bool
 	{
-		return $this->readOrDefault( 'enableCompression', null );
+		return $this->readOrDefault( null, 'enableCompression' );
 	}
 
 	/**
@@ -176,7 +176,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getExcludedAppPaths(): ?array
 	{
-		return $this->readOrDefault( 'excludedAppPaths', null );
+		return $this->readOrDefault( null, 'excludedAppPaths' );
 	}
 
 	/**
@@ -184,7 +184,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getExcludedExceptions(): ?array
 	{
-		return $this->readOrDefault( 'excludedExceptions', null );
+		return $this->readOrDefault( null, 'excludedExceptions' );
 	}
 
 	/**
@@ -192,7 +192,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getPrefixes(): ?array
 	{
-		return $this->readOrDefault( 'prefixes', null );
+		return $this->readOrDefault( null, 'prefixes' );
 	}
 
 	/**
@@ -200,7 +200,7 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getProjectRoot(): ?string
 	{
-		return $this->readOrDefault( 'projectRoot', null );
+		return $this->readOrDefault( null, 'projectRoot' );
 	}
 
 	/**
@@ -208,6 +208,6 @@ class SentryClientConfiguration extends AbstractConfiguration implements SentryC
 	 */
 	public function getSendAttempts(): ?int
 	{
-		return $this->readOrDefault( 'sendAttempts', null );
+		return $this->readOrDefault( null, 'sendAttempts' );
 	}
 }
